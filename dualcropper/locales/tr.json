@@ -87,5 +87,6 @@
   "mon4_res": "4. Monitör çözünürlüğü",
   "open_log": "Günlük Aç",
   "log_path_info": "Günlük dosyası: {path}",
-  "det_zero_size": "⚠️ bazı monitörler 0x0 boyut bildirdi - günlüğe bakın."
+  "det_zero_size": "⚠️ bazı monitörler 0x0 boyut bildirdi - günlüğe bakın.",
+  "monitor_count": "Monitör Sayısı:"
 }

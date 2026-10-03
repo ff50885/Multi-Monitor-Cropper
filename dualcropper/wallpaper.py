@@ -192,13 +192,6 @@ def _apply_dw(ids: List[str], files: List[str]) -> Tuple[bool, str]:
                 log.error("SetWallpaper monitor %d FAILED: %s [%s] id=%s file=%s",
                           i + 1, wm._describe_hr(hr), wm._fmt_hr(hr),
                           dev, os.path.basename(img))
-        # Apply() commits the batch on some builds; harmless elsewhere.
-        try:
-            apply_fn = wm.dw_get_slot(punk, wm.SLOT_APPLY)
-            hr = apply_fn(punk)
-            log.debug("IDesktopWallpaper::Apply hr=%s", wm._fmt_hr(hr))
-        except Exception as exc:
-            log.debug("Apply slot skipped: %s", exc)
         # Verification read-back: prove in the log which file each screen uses.
         for i, dev in enumerate(ids):
             try:

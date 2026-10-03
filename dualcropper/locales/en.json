@@ -88,7 +88,7 @@
   "open_log": "Open Log",
   "log_path_info": "Log file: {path}",
   "det_zero_size": "⚠️ some monitors reported 0x0 size - see log.",
-  "monitor_count": "Number of monitors",
+  "monitor_count": "Monitor Count:",
   "count_auto": "Auto (from Detect)",
   "count_manual_hint": "Select the monitor count or press Detect to show monitor settings.",
   "det_edid_note": "Sizes read from EDID; adjust manually if a value looks wrong."

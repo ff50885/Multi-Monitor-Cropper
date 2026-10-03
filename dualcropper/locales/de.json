@@ -87,5 +87,6 @@
   "mon4_res": "Monitor 4 Auflösung",
   "open_log": "Protokoll",
   "log_path_info": "Protokoldatei: {path}",
-  "det_zero_size": "⚠️ einige Monitore melden 0x0 – siehe Protokoll."
+  "det_zero_size": "⚠️ einige Monitore melden 0x0 – siehe Protokoll.",
+  "monitor_count": "Anzahl der Monitore:"
 }

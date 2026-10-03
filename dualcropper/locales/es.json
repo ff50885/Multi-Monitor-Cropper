@@ -87,5 +87,6 @@
   "mon4_res": "Resolución monitor 4",
   "open_log": "Registro",
   "log_path_info": "Archivo de registro: {path}",
-  "det_zero_size": "⚠️ algunos monitores informan 0x0 – ver registro."
+  "det_zero_size": "⚠️ algunos monitores informan 0x0 – ver registro.",
+  "monitor_count": "Número de monitores:"
 }

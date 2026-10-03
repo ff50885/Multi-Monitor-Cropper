@@ -87,5 +87,6 @@
   "mon4_res": "Résolution moniteur 4",
   "open_log": "Journal",
   "log_path_info": "Fichier journal : {path}",
-  "det_zero_size": "⚠️ certains moniteurs indiquent 0x0 – voir le journal."
+  "det_zero_size": "⚠️ certains moniteurs indiquent 0x0 – voir le journal.",
+  "monitor_count": "Nombre de moniteurs :"
 }

@@ -247,10 +247,14 @@ class App(ctk.CTk if HAVE_CTK else object):
         if v.get("image"):
             self._load_image(v["image"])
         self._update_plan()
+        if hasattr(self, "mon_count_menu") and self._visible_monitors is not None:
+            self._update_monitor_visibility(str(self._visible_monitors))
 
     # ------------------------------------------------------------------- ui
 
     def _lbl(self, parent, key, **kw):
+        if "text" in kw:
+            return ctk.CTkLabel(parent, **kw)
         return ctk.CTkLabel(parent, text=tr(key), **kw)
 
     def _build_ui(self):
@@ -317,6 +321,17 @@ class App(ctk.CTk if HAVE_CTK else object):
         mon_card.pack(fill="x", padx=8, pady=6)
         self._lbl(mon_card, "card_monitors",
                   font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w", padx=12, pady=(10, 2))
+
+        self._lbl(mon_card, "monitor_count", text="Monitör Sayısı:", 
+                  font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=12, pady=(10, 0))
+        
+        self.mon_count_menu = ctk.CTkOptionMenu(
+            mon_card, 
+            values=["1", "2", "3", "4"],
+            command=self._update_monitor_visibility
+        )
+        self.mon_count_menu.set(str(self._active_monitor_count()))
+        self.mon_count_menu.pack(fill="x", padx=12, pady=(2, 6))
 
         g = ctk.CTkFrame(mon_card, fg_color="transparent")
         g.pack(fill="x", padx=12, pady=(2, 8))
@@ -546,22 +561,13 @@ class App(ctk.CTk if HAVE_CTK else object):
             # Physical diagonal, assuming a 16:9 panel: diag_px / sqrt(16^2+9^2)
             # inches -> cm -> inches conversion collapses to px / hypot(16, 9).
             if m.width > 0 and m.height > 0:
-                diag = (m.width ** 2 + m.height ** 2) ** 0.5 / math.hypot(16, 9)
                 res_txt = f"{m.width}x{m.height}"
                 menu = self.mon_res[m.number - 1]
                 if res_txt not in RESOLUTIONS:
                     menu.configure(values=[res_txt] + RESOLUTIONS)
                 menu.set(res_txt)
-
-                """
-                try:
-                    self.mon_inch[m.number - 1].delete(0, "end")
-                    self.mon_inch[m.number - 1].insert(0, f"{diag:.1f}")
-                except Exception:
-                    pass
-                """
-                parts.append(f"M{m.number}: {res_txt}, {diag:.0f}\""
-                             + (" *" if m.primary else ""))
+                # İnç değerlerini dokunulmaz bırakıyoruz, kullanıcı kendisi girecek.
+                parts.append(f"M{m.number}: {res_txt}" + (" *" if m.primary else ""))
             else:
                 parts.append(f"M{m.number}: ?")
         info = tr("det_found", count=len(mons), info=" · ".join(parts))
@@ -571,6 +577,27 @@ class App(ctk.CTk if HAVE_CTK else object):
         dlog.info("detection result: %s", info)
         self._visible_monitors = max(2, min(4, len(mons)))
         self._persist_state()
+        self._update_plan()
+
+
+    def _update_monitor_visibility(self, count_str: str):
+        # Kullanıcının seçtiği ekran sayısına göre form elemanlarını göster veya gizle.
+        count = int(count_str)
+        self._visible_monitors = count
+        
+        for i, (r, e, m) in enumerate(self.mon_rows):
+            # i = 0 (Monitör 1), i = 1 (Monitör 2) vb.
+            if i < count:
+                self._lbl(e.master, f"mon{i + 1}_inch").grid()
+                self._lbl(e.master, f"mon{i + 1}_res").grid()
+                e.grid()
+                m.grid()
+            else:
+                self._lbl(e.master, f"mon{i + 1}_inch").grid_remove()
+                self._lbl(e.master, f"mon{i + 1}_res").grid_remove()
+                e.grid_remove()
+                m.grid_remove()
+                
         self._update_plan()
 
 
@@ -618,7 +645,9 @@ class App(ctk.CTk if HAVE_CTK else object):
         # Engine naming convention: 'large' = the wide side of the pair.
         # For N==2 keep the old behaviour (bigger diagonal == 'large').
         # For N>2 the merged group is always the 'large' side.
-        if n == 2:
+        if n == 1:
+            large_idx, small_idx = [0], 0
+        elif n == 2:
             if inches[0] >= inches[1]:
                 large_idx, small_idx = [0], 1
             else:

@@ -106,9 +106,12 @@ class _DEVICE_ID(ctypes.Structure):
 
 
 class _DISPLAY_DEVICEW(ctypes.Structure):
+    # Bu sınıf C tarafındaki yapı ile birebir eşleşmelidir, eksik alanlar bellek kaymasına yol açar.
     _fields_ = [("cb", ctypes.c_uint32), ("DeviceName", ctypes.c_wchar * 32),
                 ("DeviceString", ctypes.c_wchar * 128),
-                ("StateFlags", ctypes.c_uint32), ("DeviceIDOffset", ctypes.c_uint32)]
+                ("StateFlags", ctypes.c_uint32), 
+                ("DeviceID", ctypes.c_wchar * 128), 
+                ("DeviceIDOffset", ctypes.c_uint32)]
 
 
 _DISPLAY_DEVICE_ACTIVE = 0x00000001
@@ -281,7 +284,7 @@ def enum_gdi_rects() -> List[MonitorInfo]:
 #   "CoCreateInstance(hr=-0x7ffbfeac)"  ==  -0x80040154 signed -> class not found
 # was a wrong-CLSID bug, not a missing Windows feature.
 _CLSID_DW = "{C2CF3110-460E-4fc1-B9D0-8A1C0C9CC4BD}"
-_IID_DW = "{B9547B70-DA24-4C1E-AAB6-42C79D240F43}"
+_IID_DW = "{B92B56A9-8B55-4E14-9A89-0199BBB6F93B}"
 
 
 def _fmt_hr(hr: int) -> str:
@@ -302,16 +305,15 @@ def _fmt_hr(hr: int) -> str:
 #  22 SetWallpaperPosition(DW_WALLPAPER)
 #  23 Apply()
 SLOT_RELEASE = 2
-SLOT_ENABLE = 3
-SLOT_GET_STATUS = 4
-SLOT_GET_COUNT = 11
-SLOT_GET_PATH_AT = 12
-SLOT_GET_MONITOR_RECT = 13
-SLOT_SET_WALLPAPER = 17
-SLOT_GET_WALLPAPER = 18
-SLOT_SET_BACKGROUND_COLOR = 20
-SLOT_SET_WALLPAPER_POSITION = 22
-SLOT_APPLY = 23
+SLOT_SET_WALLPAPER = 3
+SLOT_GET_WALLPAPER = 4
+SLOT_GET_PATH_AT = 5
+SLOT_GET_COUNT = 6
+SLOT_GET_MONITOR_RECT = 7
+SLOT_SET_BACKGROUND_COLOR = 8
+SLOT_SET_WALLPAPER_POSITION = 10
+SLOT_GET_STATUS = 17
+SLOT_ENABLE = 18
 
 DW_BACKEND_SOLIDCOLOR = 0
 DW_BACKEND_STRETCH = 6
@@ -526,18 +528,27 @@ def dw_monitor_rects() -> List[Tuple[int, int, int, int]]:
         _set_ret_types(punk)
         get_count = dw_get_slot(punk, SLOT_GET_COUNT)
         get_rect = dw_get_slot(punk, SLOT_GET_MONITOR_RECT)
+        get_path = dw_get_slot(punk, SLOT_GET_PATH_AT)
         count = ctypes.c_uint(0)
         if get_count(punk, ctypes.byref(count)) < 0 or not (1 <= count.value <= 64):
             return []
         rects: List[Tuple[int, int, int, int]] = []
         for i in range(count.value):
             r = _RECT()
-            hr = get_rect(punk, ctypes.c_uint(i), ctypes.byref(r))
-            if hr >= 0:
-                rects.append((r.left, r.top, r.right - r.left, r.bottom - r.top))
+            bstr = ctypes.c_wchar_p()
+            # Önce index'e ait string cihaz yolunu (monitorID) çek
+            if get_path(punk, ctypes.c_uint(i), ctypes.byref(bstr)) >= 0 and bstr.value:
+                # Index yerine doğrudan string referansını gönder
+                hr = get_rect(punk, bstr.value, ctypes.byref(r))
+                if hr >= 0:
+                    rects.append((r.left, r.top, r.right - r.left, r.bottom - r.top))
+                else:
+                    rects.append(None)
+                try:
+                    ctypes.windll.oleaut32.SysFreeString(bstr)
+                except Exception:
+                    pass
             else:
-                log.debug("GetMonitorRECT(%d) failed: %s [%s]",
-                          i, _describe_hr(hr), _fmt_hr(hr))
                 rects.append(None)
         return rects
     finally:
@@ -654,11 +665,6 @@ def dw_set_wallpapers_comtypes(dev_paths: List[str], files: List[str]):
                 failures.append((i + 1, f"0x{hr:08X}", _describe_hr(exc.hresult)))
                 log.error("SetWallpaper (comtypes) monitor %d FAILED: %s [0x%08X]",
                           i + 1, _describe_hr(exc.hresult), hr)
-        try:
-            dw.Apply()
-            log.debug("IDesktopWallpaper::Apply (comtypes) ok")
-        except comtypes.COMError as exc:
-            log.debug("Apply hr=%s (ignored)", _fmt_hr(exc.hresult))
         # Verification read-back so the log proves what each screen shows now.
         for i, dev in enumerate(dev_paths):
             try:
