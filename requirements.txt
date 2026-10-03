@@ -1,0 +1,7 @@
+pillow>=10.0
+customtkinter>=5.2
+
+# Packaging (optional, run on Windows to build the .exe):
+#   pip install pyinstaller
+#   pyinstaller --noconfirm DualCropper.spec
+# or simply double-click build_exe.bat  ->  dist\DualCropper.exe
