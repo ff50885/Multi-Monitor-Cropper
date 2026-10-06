@@ -39,6 +39,18 @@ class MultiMonitorCropperApp(TK_BASE):
         self.title("Multi Monitor Cropper")
         self.geometry("1150x850")
 
+        # Set application icon
+        icon_path_png = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon.png')
+        icon_path_ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon.ico')
+
+        try:
+            if sys.platform == 'win32':
+                self.iconbitmap(icon_path_ico)
+            else:
+                self.iconphoto(True, tk.PhotoImage(file=icon_path_png))
+        except Exception as e:
+            print(f"Could not load icon: {e}")
+
         self.BG_MAIN = "#12261A"      
         self.BG_PANEL = "#1C3626"     
         self.BG_ENTRY = "#162C1F"     
