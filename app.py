@@ -555,6 +555,11 @@ class MultiMonitorCropperApp(TK_BASE):
                 return
 
             saved_paths = []
+            try:
+                existing_files = set(os.listdir(out_dir))
+            except OSError:
+                existing_files = set()
+
             for idx, panel in enumerate(plan.panels):
                 box = panel.crop.box()
                 cropped = img.crop(box)
@@ -564,12 +569,14 @@ class MultiMonitorCropperApp(TK_BASE):
                 
                 # Mevcut dosyayı üzerine yazmamak için (overwrite protection)
                 base_name = f"panel_{idx}"
-                save_path = os.path.join(out_dir, f"{base_name}.png")
+                file_name = f"{base_name}.png"
                 counter = 1
-                while os.path.exists(save_path):
-                    save_path = os.path.join(out_dir, f"{base_name}_{counter}.png")
+                while file_name in existing_files:
+                    file_name = f"{base_name}_{counter}.png"
                     counter += 1
-                    
+
+                existing_files.add(file_name)
+                save_path = os.path.join(out_dir, file_name)
                 resized.save(save_path)
                 saved_paths.append(save_path)
 
